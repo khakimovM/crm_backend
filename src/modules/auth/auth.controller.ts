@@ -7,14 +7,15 @@ import {
   Post,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { LoginAuthDto } from './dto/create-auth.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifySmsCodeDto } from './dto/verify.sms.code.dto';
-import { Request, Response } from 'express';
-import { LoginAuthDto } from './dto/create-auth.dto';
-import { AuthGuard } from 'src/common/guards/auth.guard';
+import { RegisterDto } from './dto/register-auth.dto';
+import { CheckStepDto } from './dto/check-step.dto';
+import { CheckProfileDto } from './dto/check-profile.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -38,8 +39,15 @@ export class AuthController {
       throw new HttpException(error.message, error.status);
     }
   }
+  @Get('check')
+  async checkAuth(@Req() req: Request) {
+    const token = req.cookies['token'];
+    if (!token) return false;
+    return true;
+  }
 
   @Post('login')
+  @HttpCode(200)
   async login(
     @Body() loginAuthDto: LoginAuthDto,
     @Res({ passthrough: true }) res: Response,
@@ -49,7 +57,7 @@ export class AuthController {
     res.cookie('token', token, {
       httpOnly: true,
       path: '/',
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 2.05 * 60 * 60 * 1000,
       secure: false,
       sameSite: 'lax',
     });
@@ -57,16 +65,40 @@ export class AuthController {
     return { token };
   }
 
-  @Get('me')
-  @UseGuards(AuthGuard)
-  async me(@Req() req: Request) {
-    const userId = req['userId'];
-
-    const user = await this.authService.me(userId);
-
-    return { user };
+  @Post('register')
+  async register(@Body() body: RegisterDto) {
+    try {
+      return await this.authService.register(body);
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
   }
 
-  @Post()
-  async logout() {}
+  @Post('check-step-successfull-complate')
+  async checkStepSuccesfullComplate(
+    @Body() body: CheckStepDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const temp = await this.authService.checkStepSuccesfullComplate(body);
+      res.cookie('token', temp.token, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 2.05 * 60 * 60 * 1000,
+        secure: false,
+        sameSite: 'lax',
+      });
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  @Post('check-profile-complated')
+  async checkProfileComplated(@Body() body: CheckProfileDto) {
+    try {
+      return await this.authService.checkProfileComplated(body);
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
 }

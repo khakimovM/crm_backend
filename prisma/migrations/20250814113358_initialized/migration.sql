@@ -1,18 +1,35 @@
 /*
   Warnings:
 
-  - A unique constraint covering the columns `[email]` on the table `users` will be added. If there are existing duplicate values, this will fail.
+  - You are about to drop the `about_companys` table. If the table is not empty, all the data it contains will be lost.
+  - You are about to drop the `about_users` table. If the table is not empty, all the data it contains will be lost.
 
 */
--- AlterTable
-ALTER TABLE "public"."users" ADD COLUMN     "email" TEXT;
+-- CreateEnum
+CREATE TYPE "public"."QuestionType" AS ENUM ('text', 'select', 'radio', 'checkbox', 'button');
+
+-- DropForeignKey
+ALTER TABLE "public"."about_companys" DROP CONSTRAINT "about_companys_userId_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."about_users" DROP CONSTRAINT "about_users_userId_fkey";
+
+-- DropTable
+DROP TABLE "public"."about_companys";
+
+-- DropTable
+DROP TABLE "public"."about_users";
+
+-- DropEnum
+DROP TYPE "public"."CountMember";
 
 -- CreateTable
 CREATE TABLE "public"."user_profile_questions" (
     "id" TEXT NOT NULL,
     "question_text" TEXT NOT NULL,
-    "question_type" TEXT NOT NULL,
+    "question_type" "public"."QuestionType" NOT NULL,
     "is_required" BOOLEAN NOT NULL DEFAULT false,
+    "step_number" INTEGER NOT NULL,
 
     CONSTRAINT "user_profile_questions_pkey" PRIMARY KEY ("id")
 );
@@ -46,13 +63,13 @@ CREATE TABLE "public"."selected_answer_options" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "user_profile_questions_question_text_key" ON "public"."user_profile_questions"("question_text");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "user_profile_question_anwsers_question_id_key" ON "public"."user_profile_question_anwsers"("question_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "selected_answer_options_answer_id_option_id_key" ON "public"."selected_answer_options"("answer_id", "option_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "public"."users"("email");
 
 -- AddForeignKey
 ALTER TABLE "public"."question_options" ADD CONSTRAINT "question_options_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."user_profile_questions"("id") ON DELETE CASCADE ON UPDATE CASCADE;

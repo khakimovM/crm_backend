@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 export class SeederService implements OnModuleInit {
   username: string;
   password: string;
+  email: string;
   public logger: Logger = new Logger(SeederService.name);
   constructor(
     private db: PrismaService,
@@ -13,6 +14,7 @@ export class SeederService implements OnModuleInit {
   ) {
     this.username = this.configService.get('SUPER_ADMIN_USERNAME') as string;
     this.password = this.configService.get('SUPER_ADMIN_PASSWORD') as string;
+    this.email = this.configService.get('SUPER_ADMIN_EMAIL') as string;
   }
   onModuleInit() {
     this.initSeeder();
@@ -30,6 +32,7 @@ export class SeederService implements OnModuleInit {
     const findAdmin = await this.db.prisma.user.findFirst({
       where: {
         username: this.username,
+        email: this.email,
       },
     });
     if (!findAdmin) return true;
@@ -38,7 +41,11 @@ export class SeederService implements OnModuleInit {
   async createAdmin() {
     const hashedPassword = await bcrypt.hash(this.password, 12);
     await this.db.prisma.user.create({
-      data: { username: this.username, password: hashedPassword },
+      data: {
+        username: this.username,
+        password: hashedPassword,
+        email: this.email,
+      },
     });
   }
 }
